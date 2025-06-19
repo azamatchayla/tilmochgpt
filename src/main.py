@@ -61,12 +61,13 @@ def offer_translation_button(message):
 
     # Guruhda xabar ko‘rinmasin
     bot.send_message(
-        chat_id=message.chat.id,
-        text="⠀",  # U+2800 - Braille Pattern Blank
-        reply_to_message_id=message.reply_to_message.message_id,
-        reply_markup=markup,
-        disable_notification=True
-    )
+    chat_id=message.chat.id,
+    text="👇 Tarjima",
+    reply_to_message_id=message.reply_to_message.message_id,
+    reply_markup=markup,
+    disable_notification=True
+)
+
 
     # Foydalanuvchi yuborgan /tarjima xabarini o‘chiramiz
     try:
