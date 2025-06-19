@@ -1,4 +1,3 @@
-
 import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
@@ -24,12 +23,8 @@ def language_selection_keyboard():
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
     text = (
-        "👋 Assalomu alaykum! Men TilmochGPT botman.
-
-"
-        "🌍 *Dunyo endi sizning tilingizda so‘zlaydi!*
-
-"
+        "👋 Assalomu alaykum! Men TilmochGPT botman.\n\n"
+        "🌍 *Dunyo endi sizning tilingizda so‘zlaydi!*\n\n"
         "Iltimos, tarjima tilini tanlang:"
     )
     bot.send_message(message.chat.id, text, parse_mode="Markdown", reply_markup=language_selection_keyboard())
@@ -61,7 +56,6 @@ def offer_translation_button(message):
         )
 
 # Tugmani bosganda tarjimani faqat foydalanuvchiga ko‘rsatish
-
 @bot.callback_query_handler(func=lambda call: call.data.startswith("translate|"))
 def show_translation(call: CallbackQuery):
     user_id = str(call.from_user.id)
@@ -79,11 +73,6 @@ def show_translation(call: CallbackQuery):
 
     translated = translate_text(original_text, to_lang)
     bot.answer_callback_query(call.id, text=translated, show_alert=True)
-
-        return
-
-    translated = translate_text(original_text, to_lang)
-    bot.answer_callback_query(call.id, translated, show_alert=True)
 
 # Shaxsiy chatda avtomatik tarjima
 @bot.message_handler(func=lambda m: m.chat.type == "private" and m.text)
