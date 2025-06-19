@@ -61,22 +61,25 @@ def offer_translation_button(message):
         )
 
 # Tugmani bosganda tarjimani faqat foydalanuvchiga ko‘rsatish
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith("translate|"))
 def show_translation(call: CallbackQuery):
     user_id = str(call.from_user.id)
-    chat_id = call.message.chat.id
-    message_id = int(call.data.split("|")[1])
     user_lang = get_user_lang(user_id)
     to_lang = user_lang.get("to", "uz")
 
     try:
-        original_msg = bot.forward_message(user_id, chat_id, message_id)
-        original_text = original_msg.text or ""
+        original_text = call.message.reply_to_message.text
     except Exception:
         original_text = ""
 
     if not original_text:
         bot.answer_callback_query(call.id, "❌ Matn topilmadi.", show_alert=True)
+        return
+
+    translated = translate_text(original_text, to_lang)
+    bot.answer_callback_query(call.id, text=translated, show_alert=True)
+
         return
 
     translated = translate_text(original_text, to_lang)
