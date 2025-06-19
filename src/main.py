@@ -59,10 +59,10 @@ def offer_translation_button(message):
         )
     )
 
-    # Invisible char (U+200B) - guruhda matn ko‘rinmasin
+    # Guruhda xabar ko‘rinmasin
     bot.send_message(
         chat_id=message.chat.id,
-        text="\u200b",
+        text="⠀",  # U+2800 - Braille Pattern Blank
         reply_to_message_id=message.reply_to_message.message_id,
         reply_markup=markup,
         disable_notification=True
@@ -72,7 +72,7 @@ def offer_translation_button(message):
     try:
         bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     except Exception:
-        pass  # admin ruxsati bo‘lmasa, xatoni yutamiz
+        pass
 
 # --- Tugmani bosganda tarjimani faqat bosgan foydalanuvchiga ko‘rsatish ---
 @bot.callback_query_handler(func=lambda c: c.data.startswith("translate|"))
