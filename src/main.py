@@ -6,100 +6,93 @@ from translator import translate_text
 
 # --- Token ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 
-# --- Til tanlash klaviaturasi ---
+# --- Doimiylar ---
+MAX_MESSAGE_LEN = 4096          # send_message limiti
+MAX_ALERT_LEN   = 180           # answer_callback_query limiti (~200)
+
+# --- Til tanlash tugmalari ---
 def language_selection_keyboard():
-    keyboard = [[
-        InlineKeyboardButton("🇺🇿 O‘zbekcha", callback_data="to_uz"),
-        InlineKeyboardButton("🇷🇺 Ruscha",   callback_data="to_ru"),
-        InlineKeyboardButton("🇬🇧 Inglizcha", callback_data="to_en")
-    ]]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton("🇺🇿 O‘zbekcha", callback_data="lang_uz"),
+        InlineKeyboardButton("🇷🇺 Русский",   callback_data="lang_ru"),
+        InlineKeyboardButton("🇬🇧 English",   callback_data="lang_en")
+    ]])
 
 # --- /start ---
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
-    text = (
-        "👋 Assalomu alaykum! Men TilmochGPT botman.\n\n"
-        "🌍 *Dunyo endi sizning tilingizda so‘zlaydi!*\n\n"
-        "Iltimos, tarjima tilini tanlang:"
-    )
     bot.send_message(
-        message.chat.id, text,
-        parse_mode="Markdown",
+        message.chat.id,
+        "👋 Assalomu alaykum! Men *TilmochGPT* botman.\n\n"
+        "🌍 _Dunyo endi sizning tilingizda so‘zlaydi!_\n\n"
+        "Iltimos, tarjima tilini tanlang ⤵️",
         reply_markup=language_selection_keyboard()
     )
 
 # --- Til tanlashni saqlash ---
-@bot.callback_query_handler(func=lambda c: c.data.startswith("to_"))
+@bot.callback_query_handler(func=lambda c: c.data.startswith("lang_"))
 def handle_language_selection(call: CallbackQuery):
-    user_id = str(call.from_user.id)
-    selected_lang = call.data.split("_")[1]
-    save_user_lang(user_id, selected_lang)
-    bot.answer_callback_query(call.id, text="✅ Til tanlandi!")
+    lang = call.data.split("_")[1]                 # uz | ru | en
+    save_user_lang(call.from_user.id, lang)
+    bot.answer_callback_query(call.id, "✅ Til tanlandi!")
     bot.send_message(
         call.message.chat.id,
-        f"✅ Endi tarjimalar *{selected_lang.upper()}* tiliga qilinadi.",
-        parse_mode="Markdown"
+        f"✅ Endi tarjimalar *{lang.upper()}* tilida beriladi."
     )
 
 # --- /tarjima (reply bilan) ---
 @bot.message_handler(commands=["tarjima"])
 def offer_translation_button(message):
-    if not message.reply_to_message:
-        return  # replysiz ishlamasin
+    if not (message.reply_to_message and message.reply_to_message.text):
+        return                                   # reply bo‘lmasa chiqib ketamiz
 
-    # ✍ Tugma
     markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton(
-            "✍ Tarjimani ko‘rish",
-            callback_data=f"translate|{message.reply_to_message.message_id}"
-        )
+    markup.add(InlineKeyboardButton(
+        "✍ Tarjimani ko‘rish",
+        callback_data=f"tr|{message.reply_to_message.message_id}"
+    ))
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text="👇 Tarjima tayyor, ko‘rish uchun tugmani bosing",
+        reply_to_message_id=message.reply_to_message.message_id,
+        reply_markup=markup,
+        disable_notification=True
     )
 
-    # Guruhda xabar ko‘rinmasin
-    bot.send_message(
-    chat_id=message.chat.id,
-    text="👇 Tarjima",
-    reply_to_message_id=message.reply_to_message.message_id,
-    reply_markup=markup,
-    disable_notification=True
-)
-
-
-    # Foydalanuvchi yuborgan /tarjima xabarini o‘chiramiz
+    # /tarjima komandasini o‘chirib yuboramiz (ixtiyoriy)
     try:
-        bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        bot.delete_message(message.chat.id, message.message_id)
     except Exception:
         pass
 
 # --- Tugmani bosganda tarjimani faqat bosgan foydalanuvchiga ko‘rsatish ---
-@bot.callback_query_handler(func=lambda c: c.data.startswith("translate|"))
+@bot.callback_query_handler(func=lambda c: c.data.startswith("tr|"))
 def show_translation(call: CallbackQuery):
-    user_id = str(call.from_user.id)
-    user_lang = get_user_lang(user_id) or {}
-    to_lang = user_lang.get("to", "uz")
-
-    original = call.message.reply_to_message.text if call.message.reply_to_message else ""
-    if not original:
+    original_msg = call.message.reply_to_message
+    if not original_msg or not original_msg.text:
         bot.answer_callback_query(call.id, "❌ Matn topilmadi.", show_alert=True)
         return
 
-    translated = translate_text(original, to_lang)
+    lang = get_user_lang(call.from_user.id) or "uz"
+    translated = translate_text(original_msg.text, lang)[:MAX_ALERT_LEN-3] + "..." \
+                 if len(original_msg.text) > MAX_ALERT_LEN else \
+                 translate_text(original_msg.text, lang)
+
     bot.answer_callback_query(call.id, translated, show_alert=True)
 
 # --- Shaxsiy chatda avtomatik tarjima ---
 @bot.message_handler(func=lambda m: m.chat.type == "private" and m.text)
 def handle_private_text(message):
-    user_id = str(message.from_user.id)
-    user_lang = get_user_lang(user_id) or {}
-    to_lang = user_lang.get("to", "uz")
-    translated = translate_text(message.text, to_lang)
+    lang = get_user_lang(message.from_user.id) or "uz"
+    translated = translate_text(message.text, lang)
+    if len(translated) > MAX_MESSAGE_LEN:
+        translated = translated[:MAX_MESSAGE_LEN-10] + "\n\n✂️ ..."
     bot.reply_to(message, f"✍ Tarjima:\n{translated}")
 
 # --- Botni ishga tushirish ---
 if __name__ == "__main__":
     print("🤖 TilmochGPT ishga tushdi...")
-    bot.infinity_polling()
+    bot.infinity_polling(skip_pending=True)
