@@ -1,29 +1,23 @@
 import json
 import os
 
-# Foydalanuvchi sozlamalari saqlanadigan fayl
-SETTINGS_FILE = "user_settings.json"
+DATA_FILE = "user_settings.json"
 
-# Fayl mavjud bo‘lmasa, bo‘sh dict bilan yaratish
-if not os.path.exists(SETTINGS_FILE):
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f)
+def save_user_lang(user_id, lang_code):
+    data = load_data()
+    data[user_id] = {"to": lang_code}
+    save_data(data)
 
-# Tilni saqlash
-def save_user_lang(user_id, to_lang):
-    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-        settings = json.load(f)
-
-    settings[user_id] = {"to": to_lang}
-
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(settings, f, indent=4, ensure_ascii=False)
-
-# Saqlangan tilni olish
 def get_user_lang(user_id):
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            settings = json.load(f)
-        return settings.get(user_id, {"to": "uz"})  # Default: o‘zbekcha
-    except Exception:
-        return {"to": "uz"}
+    data = load_data()
+    return data.get(user_id)
+
+def load_data():
+    if not os.path.exists(DATA_FILE):
+        return {}
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
