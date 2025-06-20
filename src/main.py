@@ -76,10 +76,10 @@ def show_translation(call: CallbackQuery):
         bot.answer_callback_query(call.id, "❌ Matn topilmadi.", show_alert=True)
         return
 
-    lang = get_user_lang(call.from_user.id) or "uz"
-    translated = translate_text(original_msg.text, lang)[:MAX_ALERT_LEN-3] + "..." \
-                 if len(original_msg.text) > MAX_ALERT_LEN else \
-                 translate_text(original_msg.text, lang)
+   user_lang = get_user_lang(user_id) or {}
+to_lang = user_lang.get("to", "uz")
+translated = translate_text(text, to_lang)  ✅
+
 
     bot.answer_callback_query(call.id, translated, show_alert=True)
 
