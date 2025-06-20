@@ -59,7 +59,7 @@ def offer_translation_button(message):
     )
     bot.send_message(
         chat_id=message.chat.id,
-        text="\u2800",  # U+2800 - Braille Pattern Blank
+        text="\u200B",  # U+280B - Braille Pattern Blank
         reply_to_message_id=message.reply_to_message.message_id,
         reply_markup=markup,
         disable_notification=True
