@@ -64,7 +64,7 @@ def offer_translation_button(message):
     reply_markup=markup,
     disable_notification=True
     )
-    )
+    
     try:
         bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     except Exception:
