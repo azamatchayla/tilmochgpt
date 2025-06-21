@@ -10,7 +10,8 @@ def translate_text(text, to_lang):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # gpt-4 o‘rniga gpt-3.5-turbo
+           model="gpt-4o"
+           
             messages=[
                 {"role": "system", "content": "You are a helpful translator."},
                 {"role": "user", "content": prompt}
